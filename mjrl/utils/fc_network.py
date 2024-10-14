@@ -77,7 +77,6 @@ class FCNetworkWithBatchNorm(nn.Module):
         self.act_dim = act_dim
         assert type(hidden_sizes) == tuple
         self.layer_sizes = (obs_dim, ) + hidden_sizes + (act_dim, )
-        self.device = 'cpu'
 
         # hidden layers
         self.fc_layers = nn.ModuleList([nn.Linear(self.layer_sizes[i], self.layer_sizes[i+1]) \
@@ -87,7 +86,7 @@ class FCNetworkWithBatchNorm(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        out = x.to(self.device)
+        out = x
         out = self.input_batchnorm(out)
         for i in range(len(self.fc_layers)-1):
             out = self.fc_layers[i](out)

@@ -88,6 +88,9 @@ class MLP:
 
     # Main functions
     # ============================================
+    def model_forward(self, feat):
+        return self.model(feat)
+
     def get_action(self, observation):
         o = np.float32(observation.reshape(1, -1))
         self.obs_var.data = torch.from_numpy(o)

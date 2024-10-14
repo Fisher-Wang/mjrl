@@ -19,6 +19,7 @@ def do_rollout(
         horizon = 1e6,
         base_seed = None,
         env_kwargs=None,
+        record_images=False,
 ):
     """
     :param num_traj:    number of trajectories (int)
@@ -63,12 +64,15 @@ def do_rollout(
         agent_infos = []
         env_infos = []
 
-        o = env.reset()
+        o = env.reset()  # 3096
         done = False
         t = 0
+        if record_images:
+            imgs = []
+            imgs.append(env.env.env.get_image())
 
         while t < horizon and done != True:
-            a, agent_info = policy.get_action(o)
+            a, agent_info = policy.get_action(o)  # a: (24,)
             if eval_mode:
                 a = agent_info['evaluation']
             env_info_base = env.get_env_infos()
@@ -80,6 +84,8 @@ def do_rollout(
             rewards.append(r)
             agent_infos.append(agent_info)
             env_infos.append(env_info)
+            if record_images:
+                imgs.append(env.env.env.get_image())
             o = next_o
             t += 1
 
@@ -89,7 +95,8 @@ def do_rollout(
             rewards=np.array(rewards),
             agent_infos=tensor_utils.stack_tensor_dict_list(agent_infos),
             env_infos=tensor_utils.stack_tensor_dict_list(env_infos),
-            terminated=done
+            terminated=done,
+            images=imgs if record_images else None,
         )
         paths.append(path)
 
@@ -110,6 +117,7 @@ def sample_paths(
         max_timeouts=4,
         suppress_print=False,
         env_kwargs=None,
+        record_images=False,
         ):
 
     num_cpu = 1 if num_cpu is None else num_cpu
@@ -119,7 +127,8 @@ def sample_paths(
     if num_cpu == 1:
         input_dict = dict(num_traj=num_traj, env=env, policy=policy,
                           eval_mode=eval_mode, horizon=horizon, base_seed=base_seed,
-                          env_kwargs=env_kwargs)
+                          env_kwargs=env_kwargs, 
+                          record_images=record_images)
         # dont invoke multiprocessing if not necessary
         return do_rollout(**input_dict)
 
@@ -130,7 +139,8 @@ def sample_paths(
         input_dict = dict(num_traj=paths_per_cpu, env=env, policy=policy,
                           eval_mode=eval_mode, horizon=horizon,
                           base_seed=base_seed + i * paths_per_cpu,
-                          env_kwargs=env_kwargs)
+                          env_kwargs=env_kwargs, 
+                          record_images=record_images)
         input_dict_list.append(input_dict)
     if suppress_print is False:
         start_time = timer.time()
